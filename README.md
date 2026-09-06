@@ -203,7 +203,7 @@ sequenceDiagram
 
     Publish->>Node: Begin handler
     Node->>External: Start asynchronous HTTP call
-    Note over Node,External: Publish waits; event loop is available
+    Note over Node,External: Publish waits while the event loop is available
     Orders->>Node: Run orders handler
     Node-->>Orders: Return orders
     External-->>Node: External response arrives
