@@ -1,0 +1,18 @@
+{
+  "name": "postgres-connection-queuing-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node lab/api.mjs",
+    "up": "docker compose up -d --build --wait",
+    "down": "docker compose down",
+    "experiment": "node scripts/experiment.mjs",
+    "lab": "node scripts/suite.mjs",
+    "lab:requests": "node scripts/request-count.mjs",
+    "lab:rate": "node scripts/arrival-rate.mjs",
+    "lab:event-loop": "node scripts/event-loop-impact.mjs",
+    "dashboard": "npm --prefix dashboard run dev",
+    "dashboard:build": "npm --prefix dashboard run build"
+  },
+  "dependencies": { "pg": "8.23.0" }
+}

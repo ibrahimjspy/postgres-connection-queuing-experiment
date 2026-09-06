@@ -1,0 +1,9 @@
+FROM alpine:3.22
+# This Alpine package did not create an OS account; create the runtime user explicitly.
+RUN apk add --no-cache pgbouncer \
+    && addgroup -S pgbouncer \
+    && adduser -S -G pgbouncer pgbouncer
+COPY lab/pgbouncer.ini /etc/pgbouncer/pgbouncer.ini
+COPY lab/userlist.txt /etc/pgbouncer/userlist.txt
+USER pgbouncer
+CMD ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
