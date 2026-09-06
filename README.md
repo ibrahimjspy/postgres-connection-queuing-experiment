@@ -1,5 +1,24 @@
 # Postgres connection queuing lab
 
+## Why this project exists
+
+Large microservice systems often have many application pods sharing one PostgreSQL database. Every pod owns a local connection pool, so scaling from 10 pods to 50 can multiply the number of potential database clients even when PostgreSQL capacity has not changed.
+
+During a traffic burst, requests can arrive faster than queries finish. They begin waiting in the Node pool, PgBouncer, PostgreSQL, or several of those layers in sequence. A slow transaction can occupy a backend connection, while CPU-heavy synchronous JavaScript can block an entire Node process even when database connections remain available. Both failures appear to users as slow APIs and timeouts, but they require different fixes.
+
+Teams often respond by increasing pool sizes, raising timeouts, adding retries, or scaling pods. Those changes can move the waiting elsewhere, multiply PostgreSQL connections, or make overload last longer. This repository exists to replace those temporary fixes with controlled experiments and measured evidence.
+
+The project is intended to answer questions such as:
+
+- Where is each request waiting: Node, PgBouncer, PostgreSQL, or the event loop?
+- When does PgBouncer reuse connections, and when does it only provide another queue?
+- How do bursts differ from sustained requests per second?
+- How does horizontal scaling change the total connection budget?
+- Why can one CPU-heavy Node request delay unrelated APIs?
+- When should work wait, fail quickly, move to a worker, or receive isolated capacity?
+
+Each experiment changes one variable, records raw timings and infrastructure state, and adds a short lesson note. This is a learning and diagnostic lab rather than a production capacity benchmark.
+
 ## Learning dashboard
 
 The small Next.js UI reads the latest saved experiment JSON files from `results/`:
