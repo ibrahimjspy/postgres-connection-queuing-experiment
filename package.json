@@ -11,6 +11,8 @@
     "lab:requests": "node scripts/request-count.mjs",
     "lab:rate": "node scripts/arrival-rate.mjs",
     "lab:event-loop": "node scripts/event-loop-impact.mjs",
+    "rust:up": "docker compose --profile rust up -d --build rust-api rust-api-one-thread --wait",
+    "lab:rust-event-loop": "node scripts/rust-event-loop-impact.mjs",
     "dashboard": "npm --prefix dashboard run dev",
     "dashboard:build": "npm --prefix dashboard run build"
   },

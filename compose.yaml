@@ -46,3 +46,49 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
+  rust-api:
+    profiles: ["rust"]
+    build:
+      context: .
+      dockerfile: rust-lab/Dockerfile
+    environment:
+      PGHOST: pgbouncer
+      PGPORT: 6432
+      PGUSER: lab
+      PGPASSWORD: lab-local-only
+      PGDATABASE: lab
+      RUST_ASYNC_WORKERS: 2
+    depends_on:
+      postgres: {condition: service_healthy}
+      pgbouncer: {condition: service_started}
+    ports: ["127.0.0.1::3000"]
+    cpus: 2
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:3000/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  rust-api-one-thread:
+    profiles: ["rust"]
+    build:
+      context: .
+      dockerfile: rust-lab/Dockerfile
+    environment:
+      PGHOST: pgbouncer
+      PGPORT: 6432
+      PGUSER: lab
+      PGPASSWORD: lab-local-only
+      PGDATABASE: lab
+      RUST_ASYNC_WORKERS: 1
+    depends_on:
+      postgres: {condition: service_healthy}
+      pgbouncer: {condition: service_started}
+    ports: ["127.0.0.1::3000"]
+    cpus: 2
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:3000/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30

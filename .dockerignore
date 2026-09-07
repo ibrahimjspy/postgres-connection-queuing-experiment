@@ -1,3 +1,5 @@
 node_modules
+dashboard/.next
+rust-lab/target
 results
 .git

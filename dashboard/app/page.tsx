@@ -43,7 +43,7 @@ function QueueDiagram({ selected }: { selected: Summary }) {
 export default async function Home() {
   // Read fresh lab files on every refresh instead of freezing them at build time.
   await connection();
-  const { requestCounts, firstLab, arrivalRates, eventLoop } = await loadResults();
+  const { requestCounts, firstLab, arrivalRates, eventLoop, rustEventLoop } = await loadResults();
   if (!requestCounts.length) {
     return <main className="empty"><h1>No request-count results yet</h1><p>Run <code>npm run lab:requests</code> from the repository root, then refresh.</p></main>;
   }
@@ -141,6 +141,31 @@ export default async function Home() {
             <Metric value={`${eventLoop.maxServerActiveDuringBlock}`} label="active DB slots" note={`${eventLoop.maxServerIdleDuringBlock} sampled idle`} />
           </div>
           <p className="loopLesson"><strong>PgBouncer cannot help:</strong> it received no query while JavaScript was blocked. Its connections were available but unreachable from this Node process.</p>
+        </section>
+      )}
+
+      {rustEventLoop && (
+        <section className="card rustCard">
+          <div className="sectionHeading">
+            <div><p className="sectionNumber">RUST COMPARISON</p><h2>Tokio still needs CPU isolation</h2></div>
+            <p>The same two-second CPU loop ran inside the async runtime and then through <code>spawn_blocking</code>. Every case sent nine fast queries through PgBouncer.</p>
+          </div>
+          <div className="rustCases">
+            {rustEventLoop.cases.map(item => (
+              <div className={item.mode === "offloaded" ? "rustCase isolated" : "rustCase"} key={item.name}>
+                <span>{item.asyncWorkers} async worker{item.asyncWorkers === 1 ? "" : "s"}</span>
+                <strong>{seconds(item.victimP95Ms)}</strong>
+                <small>victim request p95</small>
+                <b>{item.mode === "offloaded" ? "CPU explicitly offloaded" : "CPU inside async task"}</b>
+                <div><span>DB round trip</span><strong>{seconds(item.dbRoundTripP95Ms)}</strong></div>
+              </div>
+            ))}
+          </div>
+          <div className="codeCompare">
+            <div><span>Blocking an async worker</span><pre><code>{`async fn handler() {\n    burn_cpu(2_000);\n}`}</code></pre></div>
+            <div><span>Isolating the CPU work</span><pre><code>{`async fn handler() {\n    spawn_blocking(|| burn_cpu(2_000)).await;\n}`}</code></pre></div>
+          </div>
+          <p className="rustLesson"><strong>The result:</strong> extra runtime threads provided potential capacity, but <code>spawn_blocking</code> provided the explicit boundary that kept this HTTP path responsive.</p>
         </section>
       )}
 

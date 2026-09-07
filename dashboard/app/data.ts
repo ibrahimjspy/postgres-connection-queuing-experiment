@@ -40,7 +40,25 @@ export type EventLoopImpact = {
   errors: number;
 };
 
-type ResultFile = { timestamp: string; summary: Summary | EventLoopImpact };
+export type RustEventLoopComparison = {
+  name: "rust-event-loop-comparison";
+  cases: Array<{
+    name: string;
+    mode: "inline" | "offloaded";
+    asyncWorkers: number;
+    blockerMs: number;
+    victimCount: number;
+    baselineP95Ms: number;
+    victimP95Ms: number;
+    preHandlerP95Ms: number;
+    handlerP95Ms: number;
+    dbRoundTripP95Ms: number;
+    success: number;
+    errors: number;
+  }>;
+};
+
+type ResultFile = { timestamp: string; summary: Summary | EventLoopImpact | RustEventLoopComparison };
 
 const measured = (name: string, count: number, values: Partial<Summary>): ResultFile => ({
   timestamp: "2026-09-06T20:20:12.747Z",
@@ -78,6 +96,17 @@ const bundledResults: ResultFile[] = [
       victimDbRoundTripP95Ms: 11.44, delayBeforeHandlerP95Ms: 1915.75,
       loopMaxMs: 2018.51, maxServerActiveDuringBlock: 0, maxServerIdleDuringBlock: 4,
       maxBouncerWaitingDuringBlock: 0, success: 9, errors: 0,
+    },
+  },
+  {
+    timestamp: "2026-09-07T00:00:00.000Z",
+    summary: {
+      name: "rust-event-loop-comparison",
+      cases: [
+        { name: "rust-one-worker-inline", mode: "inline", asyncWorkers: 1, blockerMs: 2000, victimCount: 9, baselineP95Ms: 9.21, victimP95Ms: 1911.76, preHandlerP95Ms: 1908.01, handlerP95Ms: 7.1, dbRoundTripP95Ms: 7.09, success: 9, errors: 0 },
+        { name: "rust-two-workers-inline", mode: "inline", asyncWorkers: 2, blockerMs: 2000, victimCount: 9, baselineP95Ms: 6.84, victimP95Ms: 1911.42, preHandlerP95Ms: 1905.97, handlerP95Ms: 6.31, dbRoundTripP95Ms: 6.31, success: 9, errors: 0 },
+        { name: "rust-two-workers-offloaded", mode: "offloaded", asyncWorkers: 2, blockerMs: 2000, victimCount: 9, baselineP95Ms: 5.53, victimP95Ms: 57.85, preHandlerP95Ms: 55.5, handlerP95Ms: 19.37, dbRoundTripP95Ms: 19.25, success: 9, errors: 0 },
+      ],
     },
   },
 ];
@@ -119,6 +148,7 @@ export async function loadResults() {
     .sort((a, b) => (a.rps || Number.POSITIVE_INFINITY) - (b.rps || Number.POSITIVE_INFINITY));
 
   const eventLoop = latestByName.get("event-loop-impact")?.summary as unknown as EventLoopImpact | undefined;
+  const rustEventLoop = latestByName.get("rust-event-loop-comparison")?.summary as unknown as RustEventLoopComparison | undefined;
 
-  return { requestCounts, firstLab, arrivalRates, eventLoop };
+  return { requestCounts, firstLab, arrivalRates, eventLoop, rustEventLoop };
 }

@@ -174,6 +174,17 @@ npm run lab:event-loop
 
 The script compares those nine requests with a baseline and samples PgBouncer while Node is blocked. It separates client-visible latency from handler and database time. Read `results/event-loop-impact-report.md`, then refresh the dashboard.
 
+## Rust/Tokio event-loop experiment
+
+The Rust lab runs the same CPU fault and nine fast PostgreSQL requests with one Tokio async worker, two async workers, and two workers with CPU work moved to `spawn_blocking`:
+
+```sh
+npm run rust:up
+npm run lab:rust-event-loop
+```
+
+Read `rust-lab/src/main.rs` beside `lab/api.mjs`, then compare the measured cases in `results/rust-event-loop-report.md`. Both APIs use a pool of 10 clients through the same PgBouncer. The Rust services are behind the optional Compose profile `rust`.
+
 ```mermaid
 sequenceDiagram
     participant Bad as CPU-heavy request

@@ -1,6 +1,7 @@
 node_modules/
 dashboard/node_modules/
 dashboard/.next/
+rust-lab/target/
 results/*
 !results/.gitkeep
 .env
