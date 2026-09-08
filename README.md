@@ -49,7 +49,7 @@ flowchart LR
 
 ## Learning dashboard
 
-The small Next.js UI reads the latest saved experiment JSON files from `results/`:
+The small Next.js UI reads the latest saved experiment JSON files from `results/` and presents request-count, arrival-rate, Node, Rust, Go, PgBouncer, and autoscaling results together:
 
 ```sh
 npm --prefix dashboard install

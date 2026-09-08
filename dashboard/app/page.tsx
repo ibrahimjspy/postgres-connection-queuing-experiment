@@ -52,6 +52,22 @@ export default async function Home() {
   const maxDrain = Math.max(...requestCounts.map((result) => result.workloadMs));
   const slowSql = firstLab.find((result) => result.name === "02-slow-sql");
   const blockedLoop = firstLab.find((result) => result.name === "03-blocked-loop");
+  const runtimeResults = eventLoop && rustEventLoop && goEventLoop ? [
+    { label: "Node", detail: "main event loop · inline CPU", p95: eventLoop.victimP95Ms, db: eventLoop.victimDbRoundTripP95Ms },
+    ...rustEventLoop.cases.map(item => ({
+      label: `Rust · ${item.asyncWorkers} worker${item.asyncWorkers === 1 ? "" : "s"}`,
+      detail: item.mode === "offloaded" ? "spawn_blocking" : "inline CPU",
+      p95: item.victimP95Ms,
+      db: item.dbRoundTripP95Ms,
+    })),
+    ...goEventLoop.cases.map(item => ({
+      label: `Go · GOMAXPROCS ${item.goMaxProcs}`,
+      detail: `${item.cpuTasks} CPU goroutine${item.cpuTasks === 1 ? "" : "s"}`,
+      p95: item.victimP95Ms,
+      db: item.dbRoundTripP95Ms,
+    })),
+  ] : [];
+  const maxRuntimeP95 = Math.max(1, ...runtimeResults.map(item => item.p95));
 
   return (
     <main>
@@ -141,6 +157,27 @@ export default async function Home() {
             <Metric value={`${eventLoop.maxServerActiveDuringBlock}`} label="active DB slots" note={`${eventLoop.maxServerIdleDuringBlock} sampled idle`} />
           </div>
           <p className="loopLesson"><strong>PgBouncer cannot help:</strong> it received no query while JavaScript was blocked. Its connections were available but unreachable from this Node process.</p>
+        </section>
+      )}
+
+      {runtimeResults.length > 0 && (
+        <section className="card runtimeCard">
+          <div className="sectionHeading">
+            <div><p className="sectionNumber">ALL RUNTIME RESULTS</p><h2>Same fault, different schedulers</h2></div>
+            <p>One two-second CPU fault ran while nine ordinary requests queried PostgreSQL through PgBouncer. Bars show client-visible p95 latency on one shared linear scale.</p>
+          </div>
+          <div className="runtimeChart" role="img" aria-label="Node, Rust, and Go victim request p95 latency comparison">
+            {runtimeResults.map(item => (
+              <div className="runtimeRow" key={`${item.label}-${item.detail}`}>
+                <div className="runtimeName"><strong>{item.label}</strong><span>{item.detail}</span></div>
+                <div className="runtimeTrack">
+                  <div className={item.p95 < 500 ? "runtimeBar responsive" : "runtimeBar"} style={{ width: `${Math.max(3, item.p95 / maxRuntimeP95 * 100)}%` }} />
+                </div>
+                <div className="runtimeValue"><strong>{seconds(item.p95)}</strong><span>DB {seconds(item.db)}</span></div>
+              </div>
+            ))}
+          </div>
+          <p className="runtimeNote">These controlled local runs demonstrate scheduling behavior. They are not a general language-performance benchmark.</p>
         </section>
       )}
 
