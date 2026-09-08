@@ -185,6 +185,17 @@ npm run lab:rust-event-loop
 
 Read `rust-lab/src/main.rs` beside `lab/api.mjs`, then compare the measured cases in `results/rust-event-loop-report.md`. Both APIs use a pool of 10 clients through the same PgBouncer. The Rust services are behind the optional Compose profile `rust`.
 
+## Go scheduler experiment
+
+The Go lab runs the same CPU fault and nine fast PostgreSQL requests with `GOMAXPROCS=1`, `GOMAXPROCS=2`, and several competing CPU goroutines:
+
+```sh
+npm run go:up
+npm run lab:go-event-loop
+```
+
+Read `go-lab/main.go` beside the Node and Rust handlers. Go's `net/http` gives each request a goroutine, while `database/sql` is capped at 10 PgBouncer clients. The optional Compose profile `go` contains both scheduler configurations.
+
 ```mermaid
 sequenceDiagram
     participant Bad as CPU-heavy request

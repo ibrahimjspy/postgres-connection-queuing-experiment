@@ -43,7 +43,7 @@ function QueueDiagram({ selected }: { selected: Summary }) {
 export default async function Home() {
   // Read fresh lab files on every refresh instead of freezing them at build time.
   await connection();
-  const { requestCounts, firstLab, arrivalRates, eventLoop, rustEventLoop } = await loadResults();
+  const { requestCounts, firstLab, arrivalRates, eventLoop, rustEventLoop, goEventLoop } = await loadResults();
   if (!requestCounts.length) {
     return <main className="empty"><h1>No request-count results yet</h1><p>Run <code>npm run lab:requests</code> from the repository root, then refresh.</p></main>;
   }
@@ -166,6 +166,31 @@ export default async function Home() {
             <div><span>Isolating the CPU work</span><pre><code>{`async fn handler() {\n    spawn_blocking(|| burn_cpu(2_000)).await;\n}`}</code></pre></div>
           </div>
           <p className="rustLesson"><strong>The result:</strong> extra runtime threads provided potential capacity, but <code>spawn_blocking</code> provided the explicit boundary that kept this HTTP path responsive.</p>
+        </section>
+      )}
+
+      {goEventLoop && (
+        <section className="card goCard">
+          <div className="sectionHeading">
+            <div><p className="sectionNumber">GO COMPARISON</p><h2>Goroutines receive scheduler turns</h2></div>
+            <p>Go ran the same two-second CPU fault while nine handlers queried PostgreSQL through PgBouncer. The scheduler preempted CPU goroutines so request goroutines could progress.</p>
+          </div>
+          <div className="rustCases">
+            {goEventLoop.cases.map(item => (
+              <div className={item.cpuTasks > item.goMaxProcs ? "rustCase contended" : "rustCase isolated"} key={item.name}>
+                <span>GOMAXPROCS {item.goMaxProcs}</span>
+                <strong>{seconds(item.victimP95Ms)}</strong>
+                <small>victim request p95</small>
+                <b>{item.cpuTasks} CPU goroutine{item.cpuTasks === 1 ? "" : "s"}</b>
+                <div><span>DB round trip</span><strong>{seconds(item.dbRoundTripP95Ms)}</strong></div>
+              </div>
+            ))}
+          </div>
+          <div className="codeCompare">
+            <div><span>Every HTTP handler is a goroutine</span><pre><code>{`func handler(w http.ResponseWriter, r *http.Request) {\n    burnCPU(2_000)\n}`}</code></pre></div>
+            <div><span>The runtime can preempt CPU work</span><pre><code>{`GOMAXPROCS=1  // concurrency, one CPU at a time\nGOMAXPROCS=2  // two goroutines may run in parallel`}</code></pre></div>
+          </div>
+          <p className="goLesson"><strong>The result:</strong> preemption preserved responsiveness, while four CPU goroutines competing for two processors raised p95 latency to {seconds(goEventLoop.cases[2].victimP95Ms)}. Scheduling does not create additional CPU.</p>
         </section>
       )}
 

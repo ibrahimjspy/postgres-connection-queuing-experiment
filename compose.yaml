@@ -92,3 +92,41 @@ services:
       interval: 2s
       timeout: 2s
       retries: 30
+  go-api-one-proc:
+    profiles: ["go"]
+    build:
+      context: .
+      dockerfile: go-lab/Dockerfile
+    environment:
+      DATABASE_URL: postgres://lab:lab-local-only@pgbouncer:6432/lab?sslmode=disable&application_name=go-queue-lab-1-proc
+      GOMAXPROCS: 1
+    depends_on:
+      postgres: {condition: service_healthy}
+      pgbouncer: {condition: service_started}
+    ports: ["127.0.0.1::3000"]
+    cpus: 2
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--output-document=-", "http://localhost:3000/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  go-api-two-procs:
+    profiles: ["go"]
+    build:
+      context: .
+      dockerfile: go-lab/Dockerfile
+    environment:
+      DATABASE_URL: postgres://lab:lab-local-only@pgbouncer:6432/lab?sslmode=disable&application_name=go-queue-lab-2-procs
+      GOMAXPROCS: 2
+    depends_on:
+      postgres: {condition: service_healthy}
+      pgbouncer: {condition: service_started}
+    ports: ["127.0.0.1::3000"]
+    cpus: 2
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--output-document=-", "http://localhost:3000/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30

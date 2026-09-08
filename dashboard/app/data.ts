@@ -58,7 +58,25 @@ export type RustEventLoopComparison = {
   }>;
 };
 
-type ResultFile = { timestamp: string; summary: Summary | EventLoopImpact | RustEventLoopComparison };
+export type GoEventLoopComparison = {
+  name: "go-event-loop-comparison";
+  cases: Array<{
+    name: string;
+    goMaxProcs: number;
+    cpuTasks: number;
+    blockerMs: number;
+    victimCount: number;
+    baselineP95Ms: number;
+    victimP95Ms: number;
+    preHandlerP95Ms: number;
+    handlerP95Ms: number;
+    dbRoundTripP95Ms: number;
+    success: number;
+    errors: number;
+  }>;
+};
+
+type ResultFile = { timestamp: string; summary: Summary | EventLoopImpact | RustEventLoopComparison | GoEventLoopComparison };
 
 const measured = (name: string, count: number, values: Partial<Summary>): ResultFile => ({
   timestamp: "2026-09-06T20:20:12.747Z",
@@ -109,6 +127,17 @@ const bundledResults: ResultFile[] = [
       ],
     },
   },
+  {
+    timestamp: "2026-09-08T00:00:00.000Z",
+    summary: {
+      name: "go-event-loop-comparison",
+      cases: [
+        { name: "go-one-proc-one-cpu-task", goMaxProcs: 1, cpuTasks: 1, blockerMs: 2000, victimCount: 9, baselineP95Ms: 10.17, victimP95Ms: 36.31, preHandlerP95Ms: 13.6, handlerP95Ms: 24.13, dbRoundTripP95Ms: 24.12, success: 9, errors: 0 },
+        { name: "go-two-procs-one-cpu-task", goMaxProcs: 2, cpuTasks: 1, blockerMs: 2000, victimCount: 9, baselineP95Ms: 7.4, victimP95Ms: 19.43, preHandlerP95Ms: 14, handlerP95Ms: 7.62, dbRoundTripP95Ms: 7.62, success: 9, errors: 0 },
+        { name: "go-two-procs-four-cpu-tasks", goMaxProcs: 2, cpuTasks: 4, blockerMs: 2000, victimCount: 9, baselineP95Ms: 18.17, victimP95Ms: 121.85, preHandlerP95Ms: 75.12, handlerP95Ms: 46.73, dbRoundTripP95Ms: 46.72, success: 9, errors: 0 },
+      ],
+    },
+  },
 ];
 
 function isStandardResult(result: ResultFile): result is ResultFile & { summary: Summary } {
@@ -149,6 +178,7 @@ export async function loadResults() {
 
   const eventLoop = latestByName.get("event-loop-impact")?.summary as unknown as EventLoopImpact | undefined;
   const rustEventLoop = latestByName.get("rust-event-loop-comparison")?.summary as unknown as RustEventLoopComparison | undefined;
+  const goEventLoop = latestByName.get("go-event-loop-comparison")?.summary as unknown as GoEventLoopComparison | undefined;
 
-  return { requestCounts, firstLab, arrivalRates, eventLoop, rustEventLoop };
+  return { requestCounts, firstLab, arrivalRates, eventLoop, rustEventLoop, goEventLoop };
 }
